@@ -1,0 +1,10 @@
+services:
+  d61:
+    container_name: "d61-expressJs"
+    image: node:24.0.0-alpine
+    working_dir: /app/d61
+    volumes:
+      - "./:/app/d61"
+    ports:
+      - "3000:3000"
+    command: ["npm", "run", "dev"]
