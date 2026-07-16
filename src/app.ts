@@ -1,7 +1,42 @@
 import express, { type Express, type Request, type Response } from "express";
 import { v7 } from "uuid";
+import { IsString, IsEmail, IsOptional } from "class-validator";
+import { plainToInstance } from "class-transformer";
+import { validate } from "class-validator";
 
 const app: Express = express();
+
+class CustomerCreateDTO {
+  @IsString()
+  "name": string;
+
+  @IsEmail()
+  "email": string;
+
+  @IsString()
+  "phone": string;
+
+  @IsString()
+  "address": string;
+}
+
+class CustomerUpdateDTO {
+  @IsOptional()
+  @IsString()
+  name?: string;
+
+  @IsOptional()
+  @IsEmail()
+  email?: string;
+
+  @IsOptional()
+  @IsString()
+  phone?: string;
+
+  @IsOptional()
+  @IsString()
+  address?: string;
+}
 
 export const customers = [
   {
@@ -152,24 +187,22 @@ app.get("/", (req: Request, res: Response) => {
   res.json(customers);
 });
 
-app.post("/", (req: Request, res: Response) => {
-  const { name, email, phone, address } = req.body;
+app.post("/", async (req: Request, res: Response) => {
+  const newCustomer = plainToInstance(CustomerCreateDTO, req.body);
+  const errors = await validate(newCustomer, {
+    whitelist: true,
+    forbidNonWhitelisted: true,
+  });
 
-  if (!name || !email || !phone || !address) {
-    return res.status(400).json({
-      message: "Missing required fields",
-    });
+  if (errors.length > 0) {
+    return res.status(400).json(errors);
   }
 
-  const newCustomer = {
+  customers.push({
     id: v7(),
-    name,
-    email,
-    phone,
-    address,
-  };
+    ...newCustomer,
+  });
 
-  customers.push(newCustomer);
   return res.status(201).json({
     message: "Customer created successfully",
     data: newCustomer,
@@ -177,9 +210,8 @@ app.post("/", (req: Request, res: Response) => {
 });
 
 //Cap nhat toan bo
-app.put("/:id", (req: Request, res: Response) => {
+app.put("/:id", async (req: Request, res: Response) => {
   const id = req.params.id as string;
-  const { name, email, phone, address } = req.body;
 
   const index = customers.findIndex((customer) => customer.id === id);
 
@@ -189,12 +221,19 @@ app.put("/:id", (req: Request, res: Response) => {
     });
   }
 
+  const updateCustomer = plainToInstance(CustomerCreateDTO, req.body);
+  const errors = await validate(updateCustomer, {
+    whitelist: true,
+    forbidNonWhitelisted: true,
+  });
+
+  if (errors.length > 0) {
+    return res.status(400).json(errors);
+  }
+
   customers[index] = {
     id,
-    name,
-    email,
-    phone,
-    address,
+    ...updateCustomer,
   };
 
   return res.json({
@@ -204,7 +243,7 @@ app.put("/:id", (req: Request, res: Response) => {
 });
 
 //Cap nhat mot phan
-app.patch("/:id", (req: Request, res: Response) => {
+app.patch("/:id", async (req: Request, res: Response) => {
   const id = req.params.id as string;
 
   const customer = customers.find((c) => c.id === id);
@@ -215,7 +254,17 @@ app.patch("/:id", (req: Request, res: Response) => {
     });
   }
 
-  Object.assign(customer, req.body);
+  const updateCustomer = plainToInstance(CustomerUpdateDTO, req.body);
+  const errors = await validate(updateCustomer, {
+    whitelist: true,
+    forbidNonWhitelisted: true,
+  });
+
+  if (errors.length > 0) {
+    return res.status(400).json(errors);
+  }
+
+  Object.assign(customer, updateCustomer);
 
   return res.json({
     message: "Customer update successfully",
