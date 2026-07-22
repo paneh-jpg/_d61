@@ -8,3 +8,14 @@ services:
     ports:
       - "3000:3000"
     command: ["npm", "run", "dev"]
+  db:
+    container_name: "f8-k18-database"
+    image: postgres:17
+    ports:
+      - "3100:5432"
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: default
+    volumes:
+      - "./db:/var/lib/postgresql/data"
