@@ -1,5 +1,6 @@
 import { AppDataSource } from "../../config/database";
 import { CustomerEntity } from "../../entities/CustomerEntity";
+
 class CustomerService {
   private repository = AppDataSource.getRepository(CustomerEntity);
   async getList() {
